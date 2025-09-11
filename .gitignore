@@ -3,3 +3,4 @@
 Project Data/
 *.ipynb_checkpoints
 __pycache__/
+*.ipynb
