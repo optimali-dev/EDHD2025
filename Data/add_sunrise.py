@@ -2,9 +2,9 @@ import sklearn
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
-import sys
+import os
 # read parquet file into dataframe
-df = pd.read_parquet('../Data/data_files/df_imbalance_volume_ch.parquet')
+df = pd.read_parquet('Data/data_files/df_imbalance_volume_ch.parquet')
 scaler = StandardScaler()
 df["imbalance_volume_scaled"] = scaler.fit_transform(df[["imbalance_volume_ch"]])
 # now df holds the data
@@ -50,3 +50,8 @@ df["sunset_flag"]  = ((df.index >= df["sunset"] - pd.Timedelta(hours=1)) & (df.i
 
 # optional: drop helper columns
 df = df.drop(columns=["month", "sunrise", "sunset"])
+
+# save to csv
+output_path = 'Data/fulldata_with_sunrise.csv'
+df.to_csv(output_path, index=True)
+print(f'Saved dataframe with sunrise/sunset flags to {output_path}')
