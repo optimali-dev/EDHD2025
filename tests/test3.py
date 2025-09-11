@@ -32,6 +32,8 @@ X = df.select_dtypes(include='number').drop([
     'Total_System_Imbalance__Positiv_:_long_/_Negativ_:_short_ [MW]',
     'Abgedeckte_Bedarf_der_SA_mFRR- [MW]',
     'Abgedeckte_Bedarf_der_SA_mFRR+ [MW]',
+    'AE-Preis long [Euro/MWh]',
+    'AE-Preis short [Euro/MWh]',
     'target_15min'
 ], axis=1)
 
