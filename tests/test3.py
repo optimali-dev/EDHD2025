@@ -5,11 +5,11 @@ from sklearn.model_selection import TimeSeriesSplit
 
 
 # Load and preprocess data
-df = pd.read_csv('Data/fulldata_with_sunrise.csv', delimiter=',')
+df = pd.read_csv('Data/fulldata_combined.csv', delimiter=';')
 print(df.columns.tolist())
-df['time'] = pd.to_datetime(df['time'], dayfirst=True)
+df['UTC'] = pd.to_datetime(df['UTC'], dayfirst=True)
 # Sort by time
-df = df.sort_values('time')
+df = df.sort_values('UTC')
 
 
 # Remove outliers in the target (z-score > 3)
@@ -29,6 +29,9 @@ df['imbalance_negative'] = df[target_col].apply(lambda x: x if x < 0 else 0)
 
 X = df.select_dtypes(include='number').drop([
     'imbalance_volume_ch',
+    'Total_System_Imbalance__Positiv_:_long_/_Negativ_:_short_ [MW]',
+    'Abgedeckte_Bedarf_der_SA_mFRR- [MW]',
+    'Abgedeckte_Bedarf_der_SA_mFRR+ [MW]',
     'target_15min'
 ], axis=1)
 
@@ -147,7 +150,7 @@ avg_mae = sum(mae_list)/len(mae_list)
 avg_mse = sum(mse_list)/len(mse_list)
 avg_r2 = sum(r2_list)/len(r2_list)
 print(f'MAE: {avg_mae:.3f}, MSE: {avg_mse:.3f}, R2: {avg_r2:.3f}')
-print(f'accuracy for number prediction (last fold): {(abs(last_y_pred - last_y_test) < 0.1*abs(last_y_test)).mean():.3f}')
+print(f'accuracy for number prediction (last fold, ±30%): {(abs(last_y_pred - last_y_test) <= 0.3 * abs(last_y_test)).mean():.3f}')
 
 # Print accuracy for sign prediction (last fold)
 sign_true = (last_y_test > 0).astype(int)
