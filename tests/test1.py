@@ -3,7 +3,7 @@
 
 import pandas as pd
 
-df = pd.read_csv('Data/fulldata_2024_202506.csv', delimiter=';')  # or delimiter='\t'
+df = pd.read_csv('Data/plainData.csv', delimiter=';')  # or delimiter='\t'
 print(df.columns)
 # print headers count
 print(len(df.columns))

@@ -5,7 +5,7 @@ from sklearn.model_selection import TimeSeriesSplit
 
 
 # Load and preprocess data
-df = pd.read_csv('Data/fulldata_2024_202506_flattened.csv', delimiter=';')
+df = pd.read_csv('Data/plainData.csv', delimiter=';')
 print(df.columns.tolist())
 df['UTC'] = pd.to_datetime(df['UTC'], dayfirst=False)
 # Sort by time
@@ -14,7 +14,7 @@ df = df.sort_values('UTC')
 
 # Remove outliers in the target (z-score > 3)
 from scipy.stats import zscore
-target_col = 'imbalance_volume_ch'
+target_col = 'Total_System_Imbalance__Positiv_:_long_/_Negativ_:_short_ [MW]'
 df['target_z'] = zscore(df[target_col].fillna(0))
 df = df[df['target_z'].abs() < 3]
 df = df.drop(columns=['target_z'])
@@ -28,7 +28,7 @@ df['imbalance_positive'] = df[target_col].apply(lambda x: x if x > 0 else 0)
 df['imbalance_negative'] = df[target_col].apply(lambda x: x if x < 0 else 0)
 
 X = df.select_dtypes(include='number').drop([
-    'imbalance_volume_ch',
+    # 'imbalance_volume_ch',
     'Total_System_Imbalance__Positiv_:_long_/_Negativ_:_short_ [MW]',
     'Abgedeckte_Bedarf_der_SA_mFRR- [MW]',
     'Abgedeckte_Bedarf_der_SA_mFRR+ [MW]',
@@ -36,9 +36,14 @@ X = df.select_dtypes(include='number').drop([
     'AE-Preis short [Euro/MWh]',
     'AE-Preis Einpreis [Euro/MWh]',
     'target_15min',
-    'longitude',
-    'latitude',
-    'elevation'
+    'imbalance_negative',
+    'imbalance_positive',
+    'Spot CH [Euro/MWh]',
+    'Durchschnittliche pos. Sekundär-Regelenergie [Euro/MWh]',
+    'Durchschnittliche neg. Sekundär-Regelenergie [Euro/MWh]',
+    # 'longitude',
+    # 'latitude',
+    # 'elevation'
 ], axis=1)
 
 y = df['target_15min']
