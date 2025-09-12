@@ -130,15 +130,29 @@ def get_mFFR_profile(mFFR_weekly_data: pd.DataFrame, mFFR_daily_data: pd.DataFra
     mFFR_data = pd.concat([mFFR_weekly_data, mFFR_daily_data])
     return mFFR_data
 
-# Test
-auction_data_path = "../Data/data_files/df_PRL_SRL_TRL_bids.parquet"
-auction_data = pd.read_parquet(auction_data_path)
+def compute_WAP(target_volume, bids):
+    # Input columns: volume_retained_MW, market_activation_price_CURRENCY_MWh
+    # Output: weighted_avg_price
+    data = bids.sort_values(['market_activation_price_CURRENCY_MWh'])
 
-volume = 100.0
+    data['cumsum_volume'] = data['volume_retained_MW'].cumsum()
 
-time_utc = "2023-09-11T15:30:00Z"
-time = parse_utc_to_time_info(time_utc)
-print(time)
+    data['accepted_volume'] = np.where(data['cumsum_volume'] <= abs(target_volume), data['volume_retained_MW'],
+                                    np.where(data['cumsum_volume'] - abs(target_volume) < data['volume_retained_MW'],
+                                                abs(target_volume) - (data['cumsum_volume'] - data['volume_retained_MW']), 0))
 
-aFFR_weekly_data, mFFR_weekly_data, mFFR_daily_data = get_bid_profiles(auction_data, time, volume)
-mFFR_data = get_mFFR_profile(mFFR_weekly_data, mFFR_daily_data)
+    # market_clearing_price = data.loc[data['cumsum_volume'] >= abs(target_volume), 'market_activation_price_CURRENCY_MWh'].iloc[0]
+    weighted_avg_price = (np.sum(data['accepted_volume'] * data['market_activation_price_CURRENCY_MWh']) / np.sum(data['accepted_volume']))
+
+    return weighted_avg_price
+
+def get_spot_price(spot_data, time):
+    spot_price = spot_data.loc[spot_data['time'] == time, 'price_dayahead'].iloc[0]
+    return spot_price
+
+def compute_imbalance_price(volume, wap_mfrr, wap_afrr, spot):
+    if volume != 0:
+        return max(wap_mfrr, wap_afrr)
+    else:
+        return abs(spot)
+        
