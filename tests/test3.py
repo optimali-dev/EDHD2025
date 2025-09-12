@@ -133,7 +133,7 @@ for col in X_test.columns:
     pred_down = last_model.predict(X_mod)
     mean_change_up = (pred_up - base_pred).mean()
     mean_change_down = (pred_down - base_pred).mean()
-    print(f'{col}: +10% -> {mean_change_up:.3f}, -10% -> {mean_change_down:.3f}')
+    # print(f'{col}: +10% -> {mean_change_up:.3f}, -10% -> {mean_change_down:.3f}')
 
 # Positive vs negative imbalance predictions (last fold)
 print('\nPositive vs Negative Imbalance Predictions (last fold):')
