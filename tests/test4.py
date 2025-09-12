@@ -5,7 +5,7 @@ from sklearn.model_selection import TimeSeriesSplit
 
 
 # Load and preprocess data
-df = pd.read_csv('Data/fulldata_2024_202506.csv', delimiter=';')
+df = pd.read_csv('Data/fulldata_2024_202506_flattened.csv', delimiter=';')
 print(df.columns.tolist())
 df['UTC'] = pd.to_datetime(df['UTC'], dayfirst=False)
 # Sort by time
