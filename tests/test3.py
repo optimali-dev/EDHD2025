@@ -34,6 +34,7 @@ X = df.select_dtypes(include='number').drop([
     'Abgedeckte_Bedarf_der_SA_mFRR+ [MW]',
     'AE-Preis long [Euro/MWh]',
     'AE-Preis short [Euro/MWh]',
+    'AE-Preis Einpreis [Euro/MWh]',
     'target_15min',
     'longitude',
     'latitude',
@@ -121,11 +122,17 @@ if hasattr(last_model, 'feature_importances_'):
 else:
     print('Model does not provide feature importances.')
 
-# Sensitivity analysis: vary each feature +/- 10% and observe mean prediction change
-print('\nSensitivity analysis (last fold):')
+# Sensitivity analysis: vary each feature +/- 10% and observe mean prediction change (top 10 features only)
+print('\nSensitivity analysis (last fold, top 10 features):')
 X_test = X_test.copy()
 base_pred = last_model.predict(X_test)
-for col in X_test.columns:
+if hasattr(last_model, 'feature_importances_'):
+    importances = last_model.feature_importances_
+    feature_importance = sorted(zip(X_test.columns, importances), key=lambda x: x[1], reverse=True)
+    top_features = [f for f, _ in feature_importance[:10]]
+else:
+    top_features = X_test.columns[:10]
+for col in top_features:
     X_mod = X_test.copy()
     X_mod[col] = X_mod[col] * 1.1
     pred_up = last_model.predict(X_mod)
@@ -159,13 +166,12 @@ avg_r2 = sum(r2_list)/len(r2_list)
 print(f'MAE: {avg_mae:.3f}, MSE: {avg_mse:.3f}, R2: {avg_r2:.3f}')
 print(f'accuracy for number prediction (last fold, ±30%): {(abs(last_y_pred - last_y_test) <= 0.3 * abs(last_y_test)).mean():.3f}')
 # root mean squared error for the number prediction
-print(f'RMSE for number prediction (last fold): {mean_squared_error(last_y_test, last_y_pred, squared=False):.3f}')
+import numpy as np
+print(f'RMSE for number prediction (last fold): {np.sqrt(mean_squared_error(last_y_test, last_y_pred)):.3f}')
 
 # Print accuracy for sign prediction (last fold)
 sign_true = (last_y_test > 0).astype(int)
 sign_acc = (last_sign_pred == sign_true.values).mean()
 print(f"Sign prediction accuracy (last fold): {sign_acc:.3f}")
 # root mean squared error for the sign prediction (treating sign as 0/1 regression)
-print(f"Sign prediction RMSE (last fold): {mean_squared_error(sign_true, last_sign_pred):.3f}")
-
-
+print(f"Sign prediction RMSE (last fold): {np.sqrt(mean_squared_error(sign_true, last_sign_pred)):.3f}")

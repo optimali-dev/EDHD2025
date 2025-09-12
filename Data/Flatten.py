@@ -19,7 +19,9 @@ exclude_cols = [
     'target_15min',
     'longitude',
     'latitude',
-    'elevation'
+    'elevation',
+    'imbalance_volume_scaled',
+    'AE-Preis Einpreis [Euro/MWh]'
 ]
 numeric_cols_to_lag = [col for col in numeric_cols if col not in exclude_cols]
 df[numeric_cols] = df[numeric_cols].fillna(method='ffill').fillna(method='bfill')
