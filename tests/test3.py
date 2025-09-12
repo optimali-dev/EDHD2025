@@ -5,9 +5,9 @@ from sklearn.model_selection import TimeSeriesSplit
 
 
 # Load and preprocess data
-df = pd.read_csv('Data/fulldata_combined.csv', delimiter=';')
+df = pd.read_csv('Data/fulldata_2024_202506_flattened.csv', delimiter=';')
 print(df.columns.tolist())
-df['UTC'] = pd.to_datetime(df['UTC'], dayfirst=True)
+df['UTC'] = pd.to_datetime(df['UTC'], dayfirst=False)
 # Sort by time
 df = df.sort_values('UTC')
 
@@ -34,14 +34,17 @@ X = df.select_dtypes(include='number').drop([
     'Abgedeckte_Bedarf_der_SA_mFRR+ [MW]',
     'AE-Preis long [Euro/MWh]',
     'AE-Preis short [Euro/MWh]',
-    'target_15min'
+    'target_15min',
+    'longitude',
+    'latitude',
+    'elevation'
 ], axis=1)
 
 y = df['target_15min']
 
 
 # TimeSeriesSplit for backtesting
-tscv = TimeSeriesSplit(n_splits=5)
+tscv = TimeSeriesSplit(n_splits=2)
 last_y_test = None
 last_y_pred = None
 last_model = None
@@ -51,9 +54,11 @@ last_y_pred_std = None
 # plot acf on the time series
 import matplotlib.pyplot as plt
 from statsmodels.graphics.tsaplots import plot_acf
-plot_acf(y, lags=50)
-plt.title('Autocorrelation of Target (15-min ahead)')
-plt.show()
+
+
+# plot_acf(y, lags=50)
+# plt.title('Autocorrelation of Target (15-min ahead)')
+# plt.show()
 
 
 # Store metrics for each fold
@@ -65,7 +70,7 @@ conf_intervals = []
 for train_idx, test_idx in tscv.split(X):
     X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
     y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
-    model = RandomForestRegressor()
+    model = RandomForestRegressor(n_estimators=10, n_jobs=-1)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     # Confidence: std of predictions from all trees (convert X_test to numpy array to avoid warning)
@@ -75,7 +80,7 @@ for train_idx, test_idx in tscv.split(X):
 
     # Sign prediction (+/-) and confidence
     sign_labels = (y_train > 0).astype(int)  # 1 for positive, 0 for negative
-    sign_model = RandomForestRegressor()  # Use regressor for probability, or could use classifier
+    sign_model = RandomForestRegressor(n_estimators=10, n_jobs=-1)  # Use regressor for probability, or could use classifier
     sign_model.fit(X_train, sign_labels)
     sign_pred_raw = sign_model.predict(X_test)
     sign_pred = (sign_pred_raw > 0.5).astype(int)
@@ -153,11 +158,14 @@ avg_mse = sum(mse_list)/len(mse_list)
 avg_r2 = sum(r2_list)/len(r2_list)
 print(f'MAE: {avg_mae:.3f}, MSE: {avg_mse:.3f}, R2: {avg_r2:.3f}')
 print(f'accuracy for number prediction (last fold, ±30%): {(abs(last_y_pred - last_y_test) <= 0.3 * abs(last_y_test)).mean():.3f}')
+# root mean squared error for the number prediction
+print(f'RMSE for number prediction (last fold): {mean_squared_error(last_y_test, last_y_pred, squared=False):.3f}')
 
 # Print accuracy for sign prediction (last fold)
 sign_true = (last_y_test > 0).astype(int)
 sign_acc = (last_sign_pred == sign_true.values).mean()
 print(f"Sign prediction accuracy (last fold): {sign_acc:.3f}")
-
+# root mean squared error for the sign prediction (treating sign as 0/1 regression)
+print(f"Sign prediction RMSE (last fold): {mean_squared_error(sign_true, last_sign_pred):.3f}")
 
 
